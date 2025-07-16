@@ -4,6 +4,9 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Article, articles, getRelatedArticles } from '../data/articles';
 import { AdBanner } from './AdBanner';
+import { useArticleInteraction } from '../contexts/ArticleInteractionContext';
+import { useState } from 'react';
+import { Textarea } from './ui/textarea';
 
 interface ArticleModalProps {
   article: Article | null;
@@ -13,9 +16,25 @@ interface ArticleModalProps {
 }
 
 export function ArticleModal({ article, isOpen, onClose, onArticleClick }: ArticleModalProps) {
+  const { getArticleInteraction, toggleLike, addComment, shareArticle } = useArticleInteraction();
+  const [newComment, setNewComment] = useState('');
+  const [showComments, setShowComments] = useState(false);
+  
   if (!article) return null;
 
+  const interaction = getArticleInteraction(article.id);
   const relatedArticles = getRelatedArticles(article, articles, 4);
+
+  const handleAddComment = () => {
+    if (newComment.trim()) {
+      addComment(article.id, newComment);
+      setNewComment('');
+    }
+  };
+
+  const handleShare = () => {
+    shareArticle(article.id, article.title, article.excerpt);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -78,19 +97,74 @@ export function ArticleModal({ article, isOpen, onClose, onArticleClick }: Artic
           <div className="p-6 md:p-8">
             {/* Social Actions */}
             <div className="flex items-center gap-4 mb-6 pb-6 border-b">
-              <Button variant="outline" size="sm">
-                <Heart className="w-4 h-4 mr-2" />
-                Like
+              <Button 
+                variant={interaction.isLiked ? "default" : "outline"} 
+                size="sm"
+                onClick={() => toggleLike(article.id)}
+              >
+                <Heart className={`w-4 h-4 mr-2 ${interaction.isLiked ? 'fill-current' : ''}`} />
+                {interaction.likes > 0 ? `${interaction.likes} Likes` : 'Like'}
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleShare}>
                 <Share2 className="w-4 h-4 mr-2" />
                 Share
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowComments(!showComments)}
+              >
                 <MessageCircle className="w-4 h-4 mr-2" />
-                Comment
+                {interaction.comments.length > 0 ? `${interaction.comments.length} Comments` : 'Comment'}
               </Button>
             </div>
+
+            {/* Comments Section */}
+            {showComments && (
+              <div className="mb-6 pb-6 border-b">
+                <h4 className="font-semibold mb-4">Comments</h4>
+                
+                {/* Add Comment */}
+                <div className="mb-4">
+                  <Textarea
+                    placeholder="Add a comment..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="mb-2"
+                  />
+                  <Button 
+                    onClick={handleAddComment}
+                    disabled={!newComment.trim()}
+                    size="sm"
+                  >
+                    Post Comment
+                  </Button>
+                </div>
+
+                {/* Comments List */}
+                {interaction.comments.length > 0 ? (
+                  <div className="space-y-4">
+                    {interaction.comments.map((comment) => (
+                      <div key={comment.id} className="p-3 bg-muted/50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-sm">{comment.author}</span>
+                          <span className="text-xs text-muted-foreground">{comment.timestamp}</span>
+                        </div>
+                        <p className="text-sm">{comment.content}</p>
+                        {comment.likes > 0 && (
+                          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                            <Heart className="w-3 h-3" />
+                            <span>{comment.likes}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">No comments yet. Be the first to comment!</p>
+                )}
+              </div>
+            )}
 
             {/* Article Content */}
             <div className="prose prose-lg max-w-none">

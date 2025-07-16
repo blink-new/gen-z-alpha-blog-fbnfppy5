@@ -41,33 +41,11 @@ export function ArticleInteractionProvider({ children }: ArticleInteractionProvi
 
   const getArticleInteraction = (articleId: string): ArticleInteraction => {
     if (!interactions[articleId]) {
-      // Initialize with default values and some sample comments
+      // Initialize with zero counts - only real interactions will be tracked
       const defaultInteraction: ArticleInteraction = {
-        likes: Math.floor(Math.random() * 500) + 50,
+        likes: 0,
         isLiked: false,
-        comments: [
-          {
-            id: '1',
-            author: 'TechEnthusiast',
-            content: 'This is such a great article! Really opened my eyes to this topic.',
-            timestamp: '2 hours ago',
-            likes: 12
-          },
-          {
-            id: '2',
-            author: 'DigitalNomad',
-            content: 'Love the perspective here. Definitely sharing this with my friends!',
-            timestamp: '4 hours ago',
-            likes: 8
-          },
-          {
-            id: '3',
-            author: 'CreativeMinds',
-            content: 'The examples you used really helped me understand this better. Thanks!',
-            timestamp: '1 day ago',
-            likes: 15
-          }
-        ]
+        comments: []
       };
       
       setInteractions(prev => ({
